@@ -1,6 +1,16 @@
 # Deploy with: Render → Dashboard → New → Blueprint → Connect repo
 # Then "Apply" to provision all resources below.
 
+envVarGroups:
+  - name: jwt
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
+
 services:
   - type: web
     name: cluesstack-api-fastapi
@@ -9,16 +19,10 @@ services:
     autoDeploy: true
     dockerfilePath: services/api-fastapi/Dockerfile
     healthCheckPath: /healthz
+    envVarGroups:
+      - jwt
     envVars:
-      # JWT
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_ISS
-        value: cluesstack
-      - key: JWT_AUD
-        value: cluesstack-app
-
-      # Postgres (wired from the DB resource)
+      # Postgres (wired from DB)
       - key: POSTGRES_HOST
         fromDatabase:
           name: cluesstack-postgres
@@ -44,6 +48,7 @@ services:
       - key: REDIS_URL
         fromService:
           name: cluesstack-redis
+          type: keyvalue
           property: connectionString
 
   - type: web
@@ -53,15 +58,9 @@ services:
     autoDeploy: true
     dockerfilePath: services/api-express/Dockerfile
     healthCheckPath: /community/posts
+    envVarGroups:
+      - jwt
     envVars:
-      # JWT — must match FastAPI for token verification
-      - key: JWT_SECRET
-        sync: true
-      - key: JWT_ISS
-        value: cluesstack
-      - key: JWT_AUD
-        value: cluesstack-app
-
       # Postgres (same DB)
       - key: POSTGRES_HOST
         fromDatabase:
@@ -88,6 +87,7 @@ services:
       - key: REDIS_URL
         fromService:
           name: cluesstack-redis
+          type: keyvalue
           property: connectionString
 
   # Redis on Render is a "Key Value" service
