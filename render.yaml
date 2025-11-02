@@ -19,9 +19,14 @@ services:
     autoDeploy: true
     dockerfilePath: services/api-fastapi/Dockerfile
     healthCheckPath: /healthz
-    envVarGroups:
-      - jwt
     envVars:
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
       # Postgres (wired from DB)
       - key: POSTGRES_HOST
         fromDatabase:
@@ -52,15 +57,20 @@ services:
           property: connectionString
 
   - type: web
-    name: cluesstack-api-express
-    env: docker
-    plan: starter
-    autoDeploy: true
-    dockerfilePath: services/api-express/Dockerfile
     healthCheckPath: /community/posts
-    envVarGroups:
-      - jwt
     envVars:
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
+      # Postgres (same DB)
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: cluesstack-postgres
+          property: host
       # Postgres (same DB)
       - key: POSTGRES_HOST
         fromDatabase:
