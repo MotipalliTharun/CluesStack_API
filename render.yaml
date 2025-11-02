@@ -1,15 +1,5 @@
 # Deploy with: Render → Dashboard → New → Blueprint → Connect repo
-# Then "Apply" to provision all resources below.
-
-envVarGroups:
-  - name: jwt
-    envVars:
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_ISS
-        value: cluesstack
-      - key: JWT_AUD
-        value: cluesstack-app
+# Then "Apply".
 
 services:
   # --- API (FastAPI, Docker) ---
@@ -21,9 +11,14 @@ services:
     branch: main
     dockerfilePath: services/api-fastapi/Dockerfile
     healthCheckPath: /healthz
-    envVarGroups:
-      - jwt
     envVars:
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
       # Postgres (wired from DB)
       - key: POSTGRES_HOST
         fromDatabase:
@@ -52,20 +47,26 @@ services:
           type: keyvalue
           property: connectionString
 
-  # --- Community (Node/Express) ---
+  # --- Community (Node/Express or Next.js) ---
   - type: web
     name: cluesstack-community
     runtime: node
     plan: starter
     autoDeploy: true
     branch: main
-    # Adjust these to your repo layout + package.json scripts
+    # If plain Express under services/community:
     buildCommand: npm ci --prefix services/community && npm run build --prefix services/community
     startCommand: npm run start --prefix services/community
+    # If it's Next.js and you use "next start", keep the same build/start and set healthCheckPath to "/"
     healthCheckPath: /community/posts
-    envVarGroups:
-      - jwt
     envVars:
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
       # Postgres (same DB)
       - key: POSTGRES_HOST
         fromDatabase:
@@ -87,22 +88,22 @@ services:
         fromDatabase:
           name: cluesstack-postgres
           property: database
-      # Redis (optional for Express)
+      # Redis (optional)
       - key: REDIS_URL
         fromService:
           name: cluesstack-redis
           type: keyvalue
           property: connectionString
 
-  # Redis on Render as a "Key Value" service (kept as you had it)
+  # --- Redis as Key Value ---
   - type: keyvalue
     name: cluesstack-redis
     plan: free
-    ipAllowList: []   # internal access only
+    ipAllowList: []
 
 databases:
   - name: cluesstack-postgres
     databaseName: cluesstack
     user: clues
     plan: free
-    ipAllowList: []   # internal access only
+    ipAllowList: []
