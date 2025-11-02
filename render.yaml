@@ -1,0 +1,106 @@
+# Deploy with: Render → Dashboard → New → Blueprint → Connect repo
+# Then "Apply" to provision all resources below.
+
+services:
+  - type: web
+    name: cluesstack-api-fastapi
+    env: docker
+    plan: starter
+    autoDeploy: true
+    dockerfilePath: services/api-fastapi/Dockerfile
+    healthCheckPath: /healthz
+    envVars:
+      # JWT
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
+
+      # Postgres (wired from the DB resource)
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: cluesstack-postgres
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: cluesstack-postgres
+          property: port
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: cluesstack-postgres
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: cluesstack-postgres
+          property: password
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: cluesstack-postgres
+          property: database
+
+      # Redis (wired from Redis resource)
+      # Your code expects host/port; we’ll split from connection string at runtime if needed.
+      - key: REDIS_URL
+        fromService:
+          name: cluesstack-redis
+          type: redis
+          property: connectionString
+
+  - type: web
+    name: cluesstack-api-express
+    env: docker
+    plan: starter
+    autoDeploy: true
+    dockerfilePath: services/api-express/Dockerfile
+    healthCheckPath: /community/posts
+    envVars:
+      # JWT — must match FastAPI for token verification
+      - key: JWT_SECRET
+        sync: true   # reuses the same value generated above during first apply
+      - key: JWT_ISS
+        value: cluesstack
+      - key: JWT_AUD
+        value: cluesstack-app
+
+      # Postgres (same DB)
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: cluesstack-postgres
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: cluesstack-postgres
+          property: port
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: cluesstack-postgres
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: cluesstack-postgres
+          property: password
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: cluesstack-postgres
+          property: database
+
+      # Redis (optional for Express if you add caching later)
+      - key: REDIS_URL
+        fromService:
+          name: cluesstack-redis
+          type: redis
+          property: connectionString
+
+databases:
+  - name: cluesstack-postgres
+    databaseName: cluesstack
+    user: clues
+    plan: free
+    ipAllowList: [] # empty → allow from Render services in same account
+
+redis:
+  - name: cluesstack-redis
+    plan: free
+    ipAllowList: []

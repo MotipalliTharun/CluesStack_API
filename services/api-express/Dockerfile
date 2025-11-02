@@ -11,8 +11,10 @@ RUN npm run build
 FROM node:20-slim
 WORKDIR /app
 ENV NODE_ENV=production
+# Render injects PORT at runtime; default to 4000 locally
+ENV PORT=4000
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 EXPOSE 4000
-CMD ["node", "dist/index.js"]
+CMD ["bash","-lc","node dist/index.js"]
