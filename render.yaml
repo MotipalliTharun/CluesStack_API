@@ -40,12 +40,10 @@ services:
           name: cluesstack-postgres
           property: database
 
-      # Redis (wired from Redis resource)
-      # Your code expects host/port; we’ll split from connection string at runtime if needed.
+      # Redis (from Key Value service)
       - key: REDIS_URL
         fromService:
           name: cluesstack-redis
-          type: redis
           property: connectionString
 
   - type: web
@@ -58,7 +56,7 @@ services:
     envVars:
       # JWT — must match FastAPI for token verification
       - key: JWT_SECRET
-        sync: true   # reuses the same value generated above during first apply
+        sync: true
       - key: JWT_ISS
         value: cluesstack
       - key: JWT_AUD
@@ -86,21 +84,21 @@ services:
           name: cluesstack-postgres
           property: database
 
-      # Redis (optional for Express if you add caching later)
+      # Redis (optional for Express)
       - key: REDIS_URL
         fromService:
           name: cluesstack-redis
-          type: redis
           property: connectionString
+
+  # Redis on Render is a "Key Value" service
+  - type: keyvalue
+    name: cluesstack-redis
+    plan: free
+    ipAllowList: []   # empty => only internal access from your Render services
 
 databases:
   - name: cluesstack-postgres
     databaseName: cluesstack
     user: clues
     plan: free
-    ipAllowList: [] # empty → allow from Render services in same account
-
-redis:
-  - name: cluesstack-redis
-    plan: free
-    ipAllowList: []
+    ipAllowList: []   # empty => only internal access from your Render services
