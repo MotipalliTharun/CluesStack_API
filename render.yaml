@@ -12,21 +12,18 @@ envVarGroups:
         value: cluesstack-app
 
 services:
+  # --- API (FastAPI, Docker) ---
   - type: web
     name: cluesstack-api-fastapi
     env: docker
     plan: starter
     autoDeploy: true
+    branch: main
     dockerfilePath: services/api-fastapi/Dockerfile
     healthCheckPath: /healthz
+    envVarGroups:
+      - jwt
     envVars:
-      # JWT
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_ISS
-        value: cluesstack
-      - key: JWT_AUD
-        value: cluesstack-app
       # Postgres (wired from DB)
       - key: POSTGRES_HOST
         fromDatabase:
@@ -48,7 +45,6 @@ services:
         fromDatabase:
           name: cluesstack-postgres
           property: database
-
       # Redis (from Key Value service)
       - key: REDIS_URL
         fromService:
@@ -56,21 +52,20 @@ services:
           type: keyvalue
           property: connectionString
 
+  # --- Community (Node/Express) ---
   - type: web
+    name: cluesstack-community
+    runtime: node
+    plan: starter
+    autoDeploy: true
+    branch: main
+    # Adjust these to your repo layout + package.json scripts
+    buildCommand: npm ci --prefix services/community && npm run build --prefix services/community
+    startCommand: npm run start --prefix services/community
     healthCheckPath: /community/posts
+    envVarGroups:
+      - jwt
     envVars:
-      # JWT
-      - key: JWT_SECRET
-        generateValue: true
-      - key: JWT_ISS
-        value: cluesstack
-      - key: JWT_AUD
-        value: cluesstack-app
-      # Postgres (same DB)
-      - key: POSTGRES_HOST
-        fromDatabase:
-          name: cluesstack-postgres
-          property: host
       # Postgres (same DB)
       - key: POSTGRES_HOST
         fromDatabase:
@@ -92,7 +87,6 @@ services:
         fromDatabase:
           name: cluesstack-postgres
           property: database
-
       # Redis (optional for Express)
       - key: REDIS_URL
         fromService:
@@ -100,15 +94,15 @@ services:
           type: keyvalue
           property: connectionString
 
-  # Redis on Render is a "Key Value" service
+  # Redis on Render as a "Key Value" service (kept as you had it)
   - type: keyvalue
     name: cluesstack-redis
     plan: free
-    ipAllowList: []   # empty => only internal access from your Render services
+    ipAllowList: []   # internal access only
 
 databases:
   - name: cluesstack-postgres
     databaseName: cluesstack
     user: clues
     plan: free
-    ipAllowList: []   # empty => only internal access from your Render services
+    ipAllowList: []   # internal access only
