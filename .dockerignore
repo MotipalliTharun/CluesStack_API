@@ -1,0 +1,8 @@
+# flyctl launch added from .venv/.gitignore
+# Created by venv; see https://docs.python.org/3/library/venv.html
+.venv/**/*
+
+# flyctl launch added from services/api-fastapi/venv/.gitignore
+# Created by venv; see https://docs.python.org/3/library/venv.html
+services/api-fastapi/venv/**/*
+fly.toml
